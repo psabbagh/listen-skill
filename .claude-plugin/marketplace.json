@@ -1,0 +1,23 @@
+{
+  "name": "listen-skill",
+  "owner": {
+    "name": "psabbagh",
+    "url": "https://github.com/psabbagh"
+  },
+  "metadata": {
+    "description": "Listen to a podcast episode, a whole show, a YouTube video or an audio file, learn what it teaches, keep notes in a library that lasts, and turn it into a skill you can use from then on. Free, local, no API keys."
+  },
+  "plugins": [
+    {
+      "name": "listen",
+      "description": "Listen to a podcast episode, a whole show, a YouTube video or an audio file, learn what it teaches, keep notes in a library that lasts, and turn it into a skill you can use from then on. Free, local, no API keys.",
+      "author": {
+        "name": "psabbagh",
+        "url": "https://github.com/psabbagh"
+      },
+      "source": "./",
+      "category": "productivity",
+      "homepage": "https://github.com/psabbagh/listen-skill"
+    }
+  ]
+}

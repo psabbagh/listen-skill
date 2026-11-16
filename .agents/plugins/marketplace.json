@@ -1,0 +1,20 @@
+{
+  "name": "listen-skill",
+  "interface": {
+    "displayName": "Listen"
+  },
+  "plugins": [
+    {
+      "name": "listen",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

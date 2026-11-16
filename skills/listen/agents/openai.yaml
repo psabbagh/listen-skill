@@ -1,0 +1,4 @@
+interface:
+  display_name: "Listen"
+  short_description: "Learn a podcast or video and turn it into a skill"
+  default_prompt: "Use $listen to learn the latest episode of Lenny's Podcast and turn it into a skill for growing a product."

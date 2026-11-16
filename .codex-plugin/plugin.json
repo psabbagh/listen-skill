@@ -1,0 +1,40 @@
+{
+  "name": "listen",
+  "version": "1.0.0",
+  "description": "Listen to a podcast episode, a whole show, a YouTube video or an audio file, learn what it teaches, keep notes in a library that lasts, and turn it into a skill you can use from then on. Free, local, no API keys.",
+  "author": {
+    "name": "psabbagh",
+    "url": "https://github.com/psabbagh"
+  },
+  "homepage": "https://github.com/psabbagh/listen-skill",
+  "repository": "https://github.com/psabbagh/listen-skill",
+  "license": "MIT",
+  "keywords": [
+    "podcast",
+    "youtube",
+    "audio",
+    "transcription",
+    "learning",
+    "notes",
+    "skills"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Listen",
+    "shortDescription": "Learn a podcast or video and turn it into a skill",
+    "longDescription": "Give it a podcast episode, a whole show, a YouTube video or an audio file. It gets the words (captions first, otherwise transcribed on your computer), learns the method, keeps notes in your own words in ~/learning-library, and writes a new skill from them that you read and approve before it is saved. Free, no API keys.",
+    "developerName": "psabbagh",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/psabbagh/listen-skill",
+    "defaultPrompt": [
+      "Listen to this: <link>. Learn what it teaches and turn it into a skill I can use forever, for <what you want it for>.",
+      "Learn the last 10 episodes of <show> about pricing and turn them into one skill.",
+      "What does my library say about negotiation?"
+    ]
+  }
+}
