@@ -59,6 +59,7 @@ in Claude Code and pick **listen:listen**, or type `$` in Codex and pick **liste
 |---|---|
 | **An Apple Podcasts episode link** (Share → Copy Link in the Podcasts app) | That episode |
 | **An Apple Podcasts show link** | The newest episode, or the last 10, all of them, or only the ones about a topic if you ask |
+| **A Spotify episode or show link** | The same episode or show from its public feed: Spotify locks its audio, so it reads the names on Spotify's page and gets the audio from the show's own feed, and says so in one line |
 | **A show's name** ("the Acquired podcast") | Finds the show in Apple's podcast directory, shows you the matches, then uses the one you pick |
 | **A podcast's RSS feed** | Same as a show link |
 | **A link straight to an audio file** (ending in .mp3, .m4a and so on) | That file |
@@ -70,8 +71,8 @@ in Claude Code and pick **listen:listen**, or type `$` in Codex and pick **liste
 Listen takes the words only. For a YouTube video where the slides, screen or demo matter,
 use [watch-skill](https://github.com/psabbagh/watch-skill) instead.
 
-**What it cannot listen to:** Spotify (it locks its audio; name the show instead and it finds
-the same show's public feed), Audible and other locked audiobooks, and audio on a page that needs
+**What it cannot listen to:** shows that are only on Spotify (Spotify Originals and exclusives:
+they have no public feed), Audible and other locked audiobooks, and audio on a page that needs
 you to sign in, such as a paid course. A private podcast feed you subscribe to (the RSS link a
 paid show emails you) works like any other feed.
 

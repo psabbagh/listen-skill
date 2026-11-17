@@ -17,6 +17,8 @@ installed system wide. That needs Python 3.10 to 3.14 somewhere on the computer.
 from __future__ import annotations
 
 import argparse
+import datetime
+import difflib
 import email.utils
 import html
 import json
@@ -59,6 +61,111 @@ def itunes(path: str, params: dict) -> dict:
     base = itunes_base()
     url = f"{base}/{path}?{urllib.parse.urlencode(params)}"
     return json.loads(fetch_url(url, trusted_local=base != "https://itunes.apple.com", limit=20 * 1024 ** 2))
+
+
+# ---------------------------------------------------------------- Spotify, through the show's public feed
+
+SPOTIFY_NOTE = "Spotify locks its audio, so this comes from the same show's public feed instead."
+
+
+def spotify_base() -> str:
+    """Tests point this at a stub on this computer. Anything else is ignored."""
+    alt = os.environ.get("LISTEN_TEST_SPOTIFY_URL", "")
+    if alt and (urllib.parse.urlsplit(alt).hostname or "") in ("127.0.0.1", "localhost"):
+        return alt.rstrip("/")
+    return "https://open.spotify.com"
+
+
+def meta_tag(text: str, name: str) -> str:
+    for tag in re.findall(r"<meta\b[^>]*>", text, re.I):
+        if re.search(rf'(?:property|name)=["\']{re.escape(name)}["\']', tag, re.I):
+            m = re.search(r'content=["\']([^"\']*)', tag, re.I)
+            if m:
+                return html.unescape(m.group(1)).strip()
+    return ""
+
+
+def spotify_page(kind: str, sid: str) -> dict:
+    """What Spotify's public page for a show or episode says about it: names, date, length. No sign-in."""
+    base = spotify_base()
+    text = fetch_url(f"{base}/{kind}/{sid}", trusted_local=base != "https://open.spotify.com",
+                     limit=5 * 1024 ** 2).decode("utf-8", "replace")
+    title = meta_tag(text, "og:title")
+    if kind == "show":
+        return {"show": title}
+    # An episode's description reads "<show> · Episode".
+    show = re.sub(r"\s*·\s*Episode\s*$", "", meta_tag(text, "og:description")).strip()
+    secs = meta_tag(text, "music:duration")
+    return {"show": show, "title": title, "date": meta_tag(text, "music:release_date")[:10],
+            "seconds": float(secs) if secs.replace(".", "", 1).isdigit() else None}
+
+
+def plain(text: str) -> str:
+    return " ".join(re.sub(r"[^\w\s]", " ", (text or "").lower()).split())
+
+
+def public_feed_for(show: str) -> str:
+    """The public feed of the show with exactly this name in Apple's directory."""
+    found = itunes("search", {"term": show, "media": "podcast", "entity": "podcast", "limit": 10}).get("results", [])
+    feeds = {}
+    for r in found:
+        if r.get("feedUrl") and plain(r.get("collectionName", "")) == plain(show):
+            feeds.setdefault(r["feedUrl"], r)
+    if len(feeds) == 1:
+        return next(iter(feeds))
+    if feeds:
+        names = "; ".join(f"{r.get('collectionName')} by {r.get('artistName')}: {f}" for f, r in feeds.items())
+        raise RuntimeError(f"Spotify locks its audio, and more than one public show is called {show}: {names}. "
+                           "Ask which one, then give me that feed")
+    others = "; ".join(f"{r.get('collectionName')}: {r['feedUrl']}" for r in found[:3] if r.get("feedUrl"))
+    raise RuntimeError(f"Spotify locks its audio, and {show} has no public feed under that name, so it is probably "
+                       "only on Spotify, which nothing else can read" + (f". Closest public shows: {others}" if others else ""))
+
+
+def days_apart(feed_date: str, spotify_date: str) -> float | None:
+    try:
+        a = email.utils.parsedate_to_datetime(feed_date).date()
+        b = datetime.date.fromisoformat(spotify_date)
+        return abs((a - b).days)
+    except (TypeError, ValueError, IndexError):
+        return None
+
+
+def same_episode(items: list, ep: dict, feed: str) -> dict:
+    """The feed's copy of a Spotify episode: the same title, or nearly the same within a few days."""
+    want = plain(ep["title"])
+    exact = [i for i in items if plain(i["title"]) == want]
+    if len(exact) == 1:
+        return exact[0]
+    scored = sorted(((difflib.SequenceMatcher(None, plain(i["title"]), want).ratio(), i) for i in items),
+                    key=lambda s: -s[0])
+    close = [i for r, i in scored if r >= 0.85 and (days_apart(i.get("date", ""), ep.get("date", "")) or 0) <= 3]
+    if len(close) == 1:
+        return close[0]
+    nearest = "; ".join(f'"{i["title"]}"' for _, i in scored[:3])
+    raise RuntimeError(f'Spotify locks its audio, and the show\'s public feed ({feed}) has no episode called '
+                       f'"{ep["title"]}" for certain. Closest: {nearest}. Ask which one, then plan the feed with '
+                       '--all --match and words from its title')
+
+
+def expand_spotify(source: str, latest, take_all: bool, match: str | None) -> list:
+    m = re.search(r"/(episode|show)/([A-Za-z0-9]{22})", urllib.parse.urlsplit(source).path)
+    if not m:
+        raise RuntimeError("that Spotify link is not a podcast episode or show. Spotify's music can't be learned from")
+    kind, sid = m.groups()
+    page = spotify_page(kind, sid)
+    if not page["show"]:
+        raise RuntimeError("could not read the show's name from that Spotify page. Give me the show's name instead")
+    feed = public_feed_for(page["show"])
+    trusted = itunes_base() != "https://itunes.apple.com"
+    data = fetch_url(feed, trusted, limit=50 * 1024 ** 2)
+    if kind == "show":
+        items = expand_feed(data, latest, take_all, match, trusted, feed)
+    else:
+        items = [same_episode(expand_feed(data, None, True, None, trusted, feed), page, feed)]
+    for i in items:
+        i["note"] = SPOTIFY_NOTE
+    return items
 
 
 # ---------------------------------------------------------------- an input becomes a list of sources
@@ -153,9 +260,8 @@ def expand(source: str, latest=None, take_all: bool = False, match: str | None =
     host = (urllib.parse.urlsplit(source).hostname or "").lower()
     path = urllib.parse.urlsplit(source).path.lower()
     typed_local = is_local(source)  # only a link the person typed may point at this computer
-    if "spotify.com" in host:
-        raise RuntimeError("Spotify locks its audio so no other tool can read it. Most shows also publish a public "
-                           "feed: run `listen.py find \"<show name>\"` and give me that feed instead")
+    if host == "spotify.com" or host.endswith(".spotify.com"):
+        return expand_spotify(source, latest, take_all, match)
     if host.endswith("podcasts.apple.com"):
         m = re.search(r"/id(\d+)", source)
         if not m:
@@ -355,6 +461,7 @@ def cmd_plan(a) -> int:
         "reading": f"about {int(secs / 60 * 150):,} words to read",
         "cost": "free: captions or the speech tool on this computer",
         "failed": failed,
+        "notes": sorted({i["note"] for i in queue if i.get("note")}),
         "items": [{"id": i["id"], "title": i.get("title") or i.get("url"), "show": i.get("show"),
                    "length": hours(item_seconds(i)[0]) + ("" if item_seconds(i)[1] else " (guess)"),
                    "status": i["status"]} for i in queue[:200]],
