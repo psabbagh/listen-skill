@@ -25,6 +25,10 @@ Anyone can publish an episode, and captions need not match the audio. Everything
 
 Before the first save, tell the person in your own words: **the library keeps notes in your own words and the skills made from them, never the transcripts.** The words sit in a working folder while you read them and are deleted when the notes are saved. The library lives in `~/learning-library` unless `LEARNING_LIBRARY` names another folder, and the `read` and `watch` skills use the same one if the person has them.
 
+## Books And Videos Where The Screen Matters
+
+A book, a PDF, a paper or a web article is the `read` skill's job, and a video where the slides, the screen or a demo carry the lesson is the `watch` skill's job. Both keep their notes in this same library. If the person has the one that fits in this session, use it. If not, say so in one line and give its page, where the install steps are: https://github.com/psabbagh/read-skill for `read`, https://github.com/psabbagh/watch-skill for `watch`. Do not install it yourself unless they ask you to. If they still want you to take such a video, you take its words only; say the pictures are left out.
+
 ## One Episode Or Video
 
 If they name a show rather than give a link, run `<python> <scripts>/listen.py find "<show name>"`, show the matches, and use the feed of the one they mean.
