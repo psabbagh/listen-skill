@@ -34,7 +34,7 @@ If they name a show rather than give a link, run `<python> <scripts>/listen.py f
 <python> <scripts>/listen.py get
 ```
 
-`plan` takes a YouTube link, an Apple Podcasts link, an RSS feed (its newest episode), a direct mp3 link, a page on most podcast or video sites, or an audio file on this computer. It reads the feed or page and prints each episode's title, length and the time it will take; it downloads no audio.
+`plan` takes a YouTube link, an Apple Podcasts link, a Spotify episode or show link, an RSS feed (its newest episode), a direct mp3 link, a page on most podcast or video sites, or an audio file on this computer. It reads the feed or page and prints each episode's title, length and the time it will take; it downloads no audio.
 
 **Check the fit before a long one.** Look at what `plan` found. If they asked for a show's "latest" episode and it is off the topic they want the skill for (a news chat when they want pricing advice), say so and offer a better match before transcribing: `plan <feed> --latest 10` to list the recent ones, or `--match "pricing offers"`. If they still want that one, go ahead and tell them the skill will be thin.
 
@@ -42,7 +42,7 @@ If they name a show rather than give a link, run `<python> <scripts>/listen.py f
 
 Each source's words go to `source.md` in the library's `_working/<id>/` folder. If a source fails, say which one and why in plain words, carry on with the rest, and never pretend you heard it.
 
-**Spotify does not work**, because it locks its audio. Use `find` to get the show's public feed instead.
+**A Spotify link works through the show's public feed.** Spotify locks its audio, so `plan` reads the show's and episode's names from Spotify's public page, finds the same show in Apple's directory and takes the same episode from its feed. When it did, `plan` prints a line under `notes`: tell the person in that one line and carry on, without asking. It stops with a reason only when it can't be sure: a show that is only on Spotify (say so; nothing can read it), more than one public show with that name, or no episode in the feed that is clearly the same. For the last two, show what it listed and ask which one. Spotify's music is not something to learn from, and is refused.
 
 **If a YouTube video will not come through,** walk them through YouTube's own transcript one step at a time: open the video on a computer, click **...more** under the title, then **Show transcript**, select all the text in the panel, copy it and paste it here. Save it as `source.md` in a new folder under `_working`, with a `meta.json` holding `title`, `source` (the link) and `kind`, then carry on.
 

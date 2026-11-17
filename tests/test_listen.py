@@ -118,9 +118,9 @@ class Order(Base):
 
 
 class Refusals(Base):
-    def test_spotify(self):
-        with self.assertRaisesRegex(RuntimeError, "Spotify"):
-            self.listen.expand("https://open.spotify.com/episode/abc")
+    def test_spotify_music_is_refused(self):
+        with self.assertRaisesRegex(RuntimeError, "not a podcast"):
+            self.listen.expand("https://open.spotify.com/track/abcdefghijklmnopqrstuv")
 
     def test_locked_audiobook_file(self):
         f = self.root / "book.aax"
@@ -292,3 +292,67 @@ class SharedLibrary(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+EPISODE_PAGE = (b'<html><head><meta property="og:title" content="Pricing your work"/>'
+                b'<meta property="og:description" content="Made Up Show &#183; Episode"/>'
+                b'<meta name="music:duration" content="3723"/><meta name="music:release_date" content="2026-11-02T09:00:00Z"/>'
+                b'</head></html>').replace(b"&#183;", "\u00b7".encode())
+SHOW_PAGE = b'<html><head><meta property="og:title" content="Made Up Show"/></head></html>'
+SPOTIFY_EP = "https://open.spotify.com/episode/aaaaaaaaaaaaaaaaaaaaaa"
+SPOTIFY_SHOW = "https://open.spotify.com/show/bbbbbbbbbbbbbbbbbbbbbb"
+
+
+class Spotify(Base):
+    """A Spotify link is read through the same show's public feed. Every page and feed here is made up."""
+
+    def stub(self, page=EPISODE_PAGE, shows=(("Made Up Show", "https://example.com/feed"),), feed=FEED):
+        self.fetched = []
+
+        def fetch(url, trusted_local=False, limit=0, to=None, with_type=False):
+            self.fetched.append(url)
+            if "spotify.com" in url:
+                return page
+            return feed
+
+        self.listen.fetch_url = fetch
+        self.listen.itunes = lambda path, params: {"results": [
+            {"collectionName": name, "artistName": "Someone", "feedUrl": url} for name, url in shows]}
+
+    def test_episode_comes_from_the_public_feed(self):
+        self.stub()
+        items = self.listen.expand(SPOTIFY_EP)
+        self.assertEqual([(i["title"], i["url"]) for i in items], [("Pricing your work", "https://example.com/3.mp3")])
+        self.assertEqual(items[0]["note"], self.listen.SPOTIFY_NOTE)
+        self.assertIn("https://example.com/feed", self.fetched)
+
+    def test_a_slightly_different_title_on_the_same_days(self):
+        self.stub(page=EPISODE_PAGE.replace(b"Pricing your work", b"Pricing Your Work!"))
+        self.assertEqual(self.listen.expand(SPOTIFY_EP)[0]["url"], "https://example.com/3.mp3")
+
+    def test_show_link_gives_the_newest_or_more(self):
+        self.stub(page=SHOW_PAGE)
+        self.assertEqual([i["title"] for i in self.listen.expand(SPOTIFY_SHOW)], ["Pricing your work"])
+        self.assertEqual(len(self.listen.expand(SPOTIFY_SHOW, take_all=True)), 3)
+        self.assertEqual([i["title"] for i in self.listen.expand(SPOTIFY_SHOW, match="hiring")], ["Hiring your first person"])
+
+    def test_a_show_only_on_spotify_says_so(self):
+        self.stub(shows=(("Another Show", "https://example.com/other"),))
+        with self.assertRaisesRegex(RuntimeError, "probably only on Spotify.*Another Show"):
+            self.listen.expand(SPOTIFY_EP)
+
+    def test_two_public_shows_with_the_name_asks_which(self):
+        self.stub(shows=(("Made Up Show", "https://example.com/a"), ("Made up show", "https://example.com/b")))
+        with self.assertRaisesRegex(RuntimeError, "more than one public show.*Ask which one"):
+            self.listen.expand(SPOTIFY_EP)
+
+    def test_an_episode_not_in_the_feed_lists_the_closest(self):
+        self.stub(page=EPISODE_PAGE.replace(b"Pricing your work", b"Something else entirely"))
+        with self.assertRaisesRegex(RuntimeError, 'Closest: "Pricing your work"|Closest: .*"Pricing your work".*Ask which one'):
+            self.listen.expand(SPOTIFY_EP)
+
+    def test_plan_shows_the_note_once(self):
+        self.stub()
+        code, out = quiet(self.listen.main, ["plan", SPOTIFY_EP])
+        self.assertEqual(code, 0)
+        self.assertEqual(json.loads(out)["notes"], [self.listen.SPOTIFY_NOTE])
