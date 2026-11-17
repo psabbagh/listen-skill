@@ -6,6 +6,9 @@ turns them into a new skill you can use from then on.
 
 Free. No API keys. Nothing to sign up for. Works in **Claude Code** and **Codex**.
 
+**One of three.** Claude can also read whole books with [read-skill](https://github.com/psabbagh/read-skill) and watch videos
+with [watch-skill](https://github.com/psabbagh/watch-skill). Install any of them: they all keep their notes in the same library.
+
 ## 1. Install it
 
 **Claude Code.** Open your computer's terminal and run these two commands, one at a time:
@@ -41,15 +44,36 @@ Copy this into the chat, with your own link and your own goal:
 Listen to this: [link]. Learn what it teaches and turn it into a skill I can use forever, for [what you want it for].
 ```
 
-For example: *Listen to this: https://www.youtube.com/watch?v=... Learn what it teaches and
-turn it into a skill I can use forever, for pricing my design work.*
+For example: *Listen to this: https://podcasts.apple.com/us/podcast/...?i=1000... Learn what
+it teaches and turn it into a skill I can use forever, for pricing my design work.*
 
-The link can be a YouTube video, an Apple Podcasts episode, a podcast's RSS feed, a page on
-most podcast or video sites, or an audio file on your computer. You can also name a show
-("learn the last 10 episodes of [show] about hiring") and it finds the feed.
+Or name a show instead of pasting a link: *Listen to the last 10 episodes of [show] about
+hiring and turn them into one skill for interviewing candidates.*
 
 You do not have to type a command; asking is enough. If you prefer a command, type `/listen`
 in Claude Code and pick **listen:listen**, or type `$` in Codex and pick **listen**.
+
+## What it can listen to
+
+| Give it | What it does |
+|---|---|
+| **An Apple Podcasts episode link** (Share → Copy Link in the Podcasts app) | That episode |
+| **An Apple Podcasts show link** | The newest episode, or the last 10, all of them, or only the ones about a topic if you ask |
+| **A show's name** ("the Acquired podcast") | Finds the show in Apple's podcast directory, shows you the matches, then uses the one you pick |
+| **A podcast's RSS feed** | Same as a show link |
+| **A link straight to an audio file** (ending in .mp3, .m4a and so on) | That file |
+| **A YouTube video** | Its words only: captions if it has them, otherwise it transcribes the sound |
+| **A YouTube playlist or channel** | The latest 10 videos, all of them, or only the ones about a topic |
+| **A page on SoundCloud, Vimeo and many other sites** | Whatever audio the page plays |
+| **An audio or video file on your computer**: .mp3, .m4a, .m4b (audiobooks without DRM), .wav, .aac, .flac, .ogg, .opus, .mp4, .mov, .mkv, .webm | That file |
+
+Listen takes the words only. For a YouTube video where the slides, screen or demo matter,
+use [watch-skill](https://github.com/psabbagh/watch-skill) instead.
+
+**What it cannot listen to:** Spotify (it locks its audio; name the show instead and it finds
+the same show's public feed), Audible and other locked audiobooks, and audio on a page that needs
+you to sign in, such as a paid course. A private podcast feed you subscribe to (the RSS link a
+paid show emails you) works like any other feed.
 
 ## What happens
 
@@ -78,8 +102,7 @@ naming each source.
 
 ## What it does not do
 
-- **No Spotify.** Spotify locks its audio. Name the show instead and it finds the public feed.
-- **No locked files.** Audible, Kindle and other DRM-protected files are refused, never unlocked.
+- **No unlocking.** Locked files are refused, never unlocked.
 - **No transcripts kept.** The library keeps notes in its own words and the skills made from
   them, never the transcript. The words sit in a working folder while it reads them and are
   deleted once the notes are saved.
